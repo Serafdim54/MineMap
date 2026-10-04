@@ -3,6 +3,7 @@ repositories { mavenCentral() }
 loom {
  splitEnvironmentSourceSets()
  mods { minemap { sourceSet sourceSets.main; sourceSet sourceSets.client } }
+ if (project.hasProperty("minemapSmoke")) { runs { client { vmArg "-Dminemap.smoke=true" } } }
 }
 dependencies {
  minecraft "com.mojang:minecraft:${minecraft_version}"

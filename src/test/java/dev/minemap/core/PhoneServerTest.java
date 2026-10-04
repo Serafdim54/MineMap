@@ -57,4 +57,30 @@ class PhoneServerTest {
             assertTrue(next.contains("\"image\":\"new\""));
         }
     }
+    private HttpResponse<String> post(PhoneServer server, String path, String token) throws Exception {
+        var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + server.port() + path)).POST(HttpRequest.BodyPublishers.noBody());
+        if (token != null) request.header("X-MineMap-Token", token);
+        return client.send(request.build(), HttpResponse.BodyHandlers.ofString());
+    }
+    @Test void heightAndMarkersRequireTokenAndCurrentWorld() throws Exception {
+        try (var server = new PhoneServer(0)) {
+            String token = URI.create(server.url("127.0.0.1")).getFragment();
+            server.publish(new MapFrame(true, 4, "overworld", 10, 10, 0, 0, 0, 16, 22, "png"));
+            assertEquals(401, post(server, "/view?worldId=4&y=20", null).statusCode());
+            assertEquals(409, post(server, "/view?worldId=3&y=20", token).statusCode());
+            assertEquals(400, post(server, "/view?worldId=4&y=oops", token).statusCode());
+            assertEquals(200, post(server, "/view?worldId=4&y=20", token).statusCode());
+            assertEquals(20, server.viewRequest().y());
+            assertEquals(200, post(server, "/view?worldId=4&y=999", token).statusCode());
+            assertEquals(319, server.viewRequest().y());
+            assertEquals(200, post(server, "/view?worldId=4&y=auto", token).statusCode()); assertNull(server.viewRequest().y());
+            assertEquals(401, post(server, "/markers?worldId=4&x=10&y=20&z=30", null).statusCode());
+            assertEquals(400, post(server, "/markers?worldId=4&x=NaN&y=20&z=30", token).statusCode());
+            assertEquals(200, post(server, "/markers?worldId=4&x=-10&y=20&z=30&name=Cave&color=%2364b5ff", token).statusCode());
+            assertTrue(get(server, "/state", token).body().contains("\"name\":\"Cave\""));
+            server.reset(); assertNull(server.viewRequest());
+            assertEquals(401, post(server, "/view?worldId=4&y=20", token).statusCode());
+        }
+    }
+
 }

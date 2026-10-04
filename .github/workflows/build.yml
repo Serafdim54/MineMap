@@ -20,6 +20,10 @@ jobs:
       - run: npm install --no-save --package-lock=false playwright@1.55.1
       - run: npx playwright install --with-deps chromium webkit
       - run: node tests/phone.cjs
+      - name: Minecraft client startup smoke
+        run: |
+          timeout 240s xvfb-run -a ./gradlew runClient -PminemapSmoke --no-daemon | tee build/client-smoke.log
+          grep -q MINEMAP_SMOKE_OK build/client-smoke.log
       - run: node tests/phone.cjs
         env:
           MINEMAP_BROWSER: webkit
@@ -35,4 +39,7 @@ jobs:
         if: always()
         with:
           name: test-results
-          path: build/reports/tests/
+          path: |
+            build/reports/tests/
+            build/client-smoke.log
+            run/logs/latest.log

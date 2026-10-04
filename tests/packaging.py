@@ -22,11 +22,16 @@ def inspect(data):
 inspect(jar.read_bytes())
 assert mods['minemap']['version'] == properties['version']
 assert mods['minemap']['environment'] == 'client'
+assert 'minemap.client.mixins.json' in mods['minemap']['mixins']
 assert mods['fabric-api']['version'] == properties['fabric_api_version']
 for required in (
     'dev/minemap/MineMapClient.class',
     'dev/minemap/PairingScreen.class',
     'dev/minemap/core/PhoneServer.class',
+    'dev/minemap/core/HeightView.class',
+    'dev/minemap/core/ChunkMapStore.class',
+    'dev/minemap/core/PointStore.class',
+    'dev/minemap/mixin/ChunkUpdateMixin.class',
     'net/fabricmc/fabric/api/client/keymapping/v1/KeyMappingHelper.class',
     'net/fabricmc/fabric/api/client/event/lifecycle/v1/ClientTickEvents.class',
     'net/fabricmc/fabric/api/client/event/lifecycle/v1/ClientLifecycleEvents.class',

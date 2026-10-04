@@ -4,22 +4,25 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#101713"><title>MineMap</title>
 <style>
-:root{color-scheme:dark;font:14px system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:#101713;color:#eef5ef;overflow:hidden}canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;background:#141d18}.top{position:fixed;top:max(16px,env(safe-area-inset-top));left:16px;right:16px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none}.brand,.info,.buttons{background:#101713df;border:1px solid #ffffff19;backdrop-filter:blur(14px);border-radius:18px;box-shadow:0 8px 30px #0003}.brand{padding:12px 16px}.brand b{font-size:21px;letter-spacing:-.8px}.brand small{display:block;color:#9baa9e;font-size:11px;margin-top:4px}.info{padding:12px;text-align:right;font-variant-numeric:tabular-nums}#status{font-size:11px;color:#ade0bc}#coords{margin-top:5px}.bottom{position:fixed;bottom:max(18px,env(safe-area-inset-bottom));left:16px;right:16px;display:flex;align-items:end;justify-content:space-between;gap:12px}.buttons{padding:5px;display:flex;gap:3px}button{border:0;border-radius:13px;background:transparent;color:#e8f1eb;padding:12px 14px;font:inherit;cursor:pointer;touch-action:manipulation}button:active{background:#ffffff18}button.on{background:#294e36;color:#b7efc7}#notice{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);max-width:340px;width:calc(100% - 40px);text-align:center;background:#101713e8;border:1px solid #ffffff20;border-radius:22px;padding:24px;pointer-events:none}#notice strong{display:block;font-size:21px;margin-bottom:9px}#notice span{color:#aebcb1;line-height:1.6}.north{position:fixed;left:20px;top:104px;color:#b1c0b5;font-size:12px}#scale{font-size:11px;color:#b1c0b5;padding-bottom:10px}#scale:before{content:'';display:block;width:64px;border:1px solid #b1c0b5;border-top:0;height:5px;margin-bottom:5px}button:focus-visible{outline:2px solid #ade0bc}
+:root{color-scheme:dark;font:14px system-ui,sans-serif}*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:#101713;color:#eef5ef;overflow:hidden}canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;background:#141d18}.top{position:fixed;top:max(16px,env(safe-area-inset-top));left:16px;right:16px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none}.card{background:#101713ed;border:1px solid #ffffff19;backdrop-filter:blur(14px);border-radius:18px;box-shadow:0 8px 30px #0003}.brand{padding:12px 16px;font-size:21px;letter-spacing:-.8px}.info{padding:12px;text-align:right;font-variant-numeric:tabular-nums}#status{font-size:11px;color:#ade0bc}#coords{margin-top:5px}.bottom{position:fixed;bottom:max(18px,env(safe-area-inset-bottom));left:16px;right:16px;display:flex;align-items:end;justify-content:space-between;gap:8px}.buttons{padding:5px;display:flex;gap:3px}button{border:0;border-radius:13px;background:transparent;color:#e8f1eb;padding:12px 11px;font:inherit;cursor:pointer;touch-action:manipulation}button:active{background:#ffffff18}button.on{background:#294e36;color:#b7efc7}#notice{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);max-width:340px;width:calc(100% - 40px);text-align:center;padding:24px;pointer-events:none}#notice strong{display:block;font-size:21px;margin-bottom:9px}#notice span{color:#aebcb1;line-height:1.6}.axes{position:fixed;left:20px;top:88px;color:#b1c0b5;font-size:12px;line-height:1.7}#scale{font-size:11px;color:#b1c0b5;padding-bottom:8px}#scale:before{content:'';display:block;width:64px;border:1px solid #b1c0b5;border-top:0;height:5px;margin-bottom:5px}button:focus-visible{outline:2px solid #ade0bc}.height{position:fixed;left:16px;right:16px;bottom:max(98px,calc(env(safe-area-inset-bottom) + 80px));padding:10px 12px;display:flex;gap:12px;align-items:center}.height div{flex:1;min-width:0}#layer{font-size:12px;color:#b7c8bc}#heightRange{width:100%;accent-color:#9ce8b4;margin:8px 0 0;touch-action:pan-x}#saved{font-size:11px;margin-top:4px;color:#9baa9e}#markerPanel{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:calc(100% - 32px);max-width:380px;padding:18px;max-height:80vh;overflow:auto}#markerPanel h2{margin:0 0 12px;font-size:18px}label{display:block;color:#b7c8bc;font-size:12px;margin-top:10px}input,select{font:inherit;max-width:100%}input[type=text],input[type=number]{display:block;width:100%;background:#1c2c22;border:1px solid #4a6553;color:#fff;border-radius:9px;padding:9px;margin-top:5px}.pointcoords{display:flex;gap:8px}.pointcoords label{flex:1;min-width:0}.palette{display:flex;gap:8px;margin:12px 0}.palette button{width:32px;height:32px;border-radius:50%;padding:0;border:3px solid transparent}.palette button.selected{border-color:#fff}.pointitem{display:flex;align-items:center;gap:8px;margin-top:8px}.pointitem span{flex:1;overflow-wrap:anywhere}.pointitem small{display:block;color:#9baa9e;font-size:11px}.pointitem i{width:10px;height:10px;border-radius:50%;flex:none}#pointError{color:#ffadad;min-height:18px;font-size:12px}
 </style>
 </head>
 <body>
 <canvas id="map" aria-label="Карта Minecraft"></canvas>
-<div class="top"><div class="brand"><b>MineMap<span style="color:#9ce8b4">.</span></b><small>ТВОЙ МИР · ВТОРОЙ ЭКРАН</small></div><div class="info"><div id="status">Подключение…</div><div id="coords">—</div></div></div>
-<div class="north">↑ N</div>
-<div id="notice"><strong>Подключение к миру</strong><span>Оставь Minecraft открытым на ноутбуке.</span></div>
-<div class="bottom"><div><div id="scale">— блоков</div><div class="buttons"><button id="follow" class="on">◎ Игрок</button><button id="full" aria-label="Полный экран">⛶</button></div></div><div class="buttons"><button id="minus" aria-label="Уменьшить">−</button><button id="plus" aria-label="Увеличить">+</button></div></div>
+<div class="top"><div class="brand card"><b>MineMap<span style="color:#9ce8b4">.</span></b></div><div class="info card"><div id="status">Подключение…</div><div id="coords">—</div><div id="saved"></div></div></div>
+<div class="axes">+X →<br>+Z ↓</div>
+<div id="notice" class="card"><strong>Подключение к миру</strong><span>Оставь Minecraft открытым на компьютере.</span></div>
+<div class="height card" id="heightPanel" hidden><div><div id="layer">Высота карты</div><input id="heightRange" type="range" min="-64" max="319" value="64" aria-label="Высота среза карты"></div><button id="autoHeight" class="on">Авто</button></div>
+<div class="bottom"><div><div id="scale">— блоков</div><div class="buttons card"><button id="follow" class="on">◎ Игрок</button><button id="full" aria-label="Полный экран">⛶</button><button id="addPoint">Метки</button></div></div><div class="buttons card"><button id="minus" aria-label="Уменьшить">−</button><button id="plus" aria-label="Увеличить">+</button></div></div>
+<div id="markerPanel" class="card" hidden><h2>Метка в центре карты</h2><form id="pointForm"><label>Название<input id="pointName" type="text" maxlength="64" value="Метка" required></label><div class="pointcoords"><label>X<input id="pointX" type="number" step="1" required></label><label>Y<input id="pointY" type="number" step="1" required></label><label>Z<input id="pointZ" type="number" step="1" required></label></div><div class="palette" id="palette"></div><div id="pointError" role="status"></div><button type="submit" class="on">Сохранить</button><button type="button" id="closePoints">Закрыть</button></form><div id="pointList"></div></div>
 <script>
 'use strict';
 const canvas=document.querySelector('#map'),ctx=canvas.getContext('2d');
 const status=document.querySelector('#status'),coords=document.querySelector('#coords'),notice=document.querySelector('#notice');
-const token=location.hash.slice(1); // Session key stays out of HTTP URLs and referrers.
-let frame=null,bitmap=null,revision=-1,center={x:0,z:0},zoom=3,following=true,w=0,h=0,connected=false,lastWorld=null;
-let imageGeneration=0;
+const range=document.querySelector('#heightRange'),autoHeight=document.querySelector('#autoHeight'),layer=document.querySelector('#layer');
+const token=location.hash.slice(1);
+let frame=null,bitmap=null,revision=-1,center={x:0,z:0},zoom=3,following=true,w=0,h=0,connected=false,lastWorld=null,lastView=null;
+let imageGeneration=0,chunkImages=new Map(),markers=[],player=null,heightTimer=null,heightBusy=false,pendingHeight=null,editingHeight=false,pointColor='#ff6b6b';
 function message(title,body){notice.hidden=false;notice.querySelector('strong').textContent=title;notice.querySelector('span').textContent=body}
 function resize(){w=innerWidth;h=innerHeight;const dpr=devicePixelRatio||1;canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);draw()}
 function draw(){
@@ -27,47 +30,121 @@ function draw(){
  ctx.strokeStyle='#ffffff06';ctx.lineWidth=1;const grid=16*zoom;
  for(let x=((w/2-center.x*zoom)%grid+grid)%grid;x<w;x+=grid){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}
  for(let y=((h/2-center.z*zoom)%grid+grid)%grid;y<h;y+=grid){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}
- if(frame?.active&&bitmap){ctx.imageSmoothingEnabled=false;ctx.drawImage(bitmap,w/2+(frame.originX-center.x)*zoom,h/2+(frame.originZ-center.z)*zoom,frame.size*zoom,frame.size*zoom)}
- if(frame?.active){const px=w/2+(frame.x-center.x)*zoom,py=h/2+(frame.z-center.z)*zoom;
-  ctx.save();ctx.translate(px,py);ctx.fillStyle='#bbffd32a';ctx.beginPath();ctx.arc(0,0,22,0,Math.PI*2);ctx.fill();ctx.rotate((frame.yaw+180)*Math.PI/180);ctx.fillStyle='#c8ffda';ctx.strokeStyle='#163b23';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,-14);ctx.lineTo(9,10);ctx.lineTo(0,5);ctx.lineTo(-9,10);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
+ ctx.imageSmoothingEnabled=false;
+ if(frame?.active){
+  if(bitmap)ctx.drawImage(bitmap,w/2+(frame.originX-center.x)*zoom,h/2+(frame.originZ-center.z)*zoom,frame.size*zoom,frame.size*zoom);
+  function paintTile(tile){if(!tile)return;
+   const x=w/2+(tile.x*16-center.x)*zoom,y=h/2+(tile.z*16-center.z)*zoom,s=16*zoom;
+   if(x+s>=0&&y+s>=0&&x<w&&y<h)ctx.drawImage(tile.image,x,y,s,s);
+  }
+  const left=Math.floor((center.x-w/(2*zoom))/16),right=Math.floor((center.x+w/(2*zoom))/16);
+  const top=Math.floor((center.z-h/(2*zoom))/16),bottom=Math.floor((center.z+h/(2*zoom))/16);
+  if((right-left+1)*(bottom-top+1)<chunkImages.size){for(let z=top;z<=bottom;z++)for(let x=left;x<=right;x++)paintTile(chunkImages.get(x+','+z));}
+  else for(const tile of chunkImages.values())paintTile(tile);
+  for(const point of markers){
+   const x=w/2+(point.x-center.x)*zoom,y=h/2+(point.z-center.z)*zoom;
+   if(x< -100||y< -30||x>w+100||y>h+30)continue;
+   ctx.globalAlpha=frame.slice&&Math.abs(point.y-frame.mapY)>4?.4:1;ctx.fillStyle=point.color;ctx.strokeStyle='#0c1810';ctx.lineWidth=2;
+   ctx.beginPath();ctx.arc(x,y,6,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.font='12px system-ui';ctx.textAlign='center';ctx.strokeText(point.name,x,y-12);ctx.fillText(point.name,x,y-12);ctx.globalAlpha=1;
+  }
+  if(player){const px=w/2+(player.x-center.x)*zoom,py=h/2+(player.z-center.z)*zoom;
+   ctx.save();ctx.translate(px,py);ctx.fillStyle='#bbffd32a';ctx.beginPath();ctx.arc(0,0,22,0,Math.PI*2);ctx.fill();ctx.rotate((player.yaw+180)*Math.PI/180);ctx.fillStyle='#c8ffda';ctx.strokeStyle='#163b23';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,-14);ctx.lineTo(9,10);ctx.lineTo(0,5);ctx.lineTo(-9,10);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
+  }
  }
  document.querySelector('#scale').textContent=Math.round(64/zoom)+' блоков';
+}
+let previousTime=0;
+function animate(time){
+ const dt=Math.min(100,time-previousTime);previousTime=time;
+ if(frame?.active&&player){const alpha=1-Math.exp(-dt/65);
+  const moving=Math.abs(frame.x-player.x)+Math.abs(frame.z-player.z)+Math.abs(((frame.yaw-player.yaw+180)%360+360)%360-180)>.002;
+  player.x+=(frame.x-player.x)*alpha;player.z+=(frame.z-player.z)*alpha;
+  player.yaw+=(((frame.yaw-player.yaw+180)%360+360)%360-180)*alpha;
+  if(following)center={x:player.x,z:player.z};if(moving)draw();
+ }
+ requestAnimationFrame(animate);
 }
 function setFollow(value){following=value;document.querySelector('#follow').classList.toggle('on',value);if(value&&frame){center={x:frame.x,z:frame.z};draw()}}
 function changeZoom(factor){zoom=Math.min(20,Math.max(.5,zoom*factor));draw()}
 document.querySelector('#follow').onclick=()=>setFollow(true);
-document.querySelector('#plus').onclick=()=>changeZoom(1.4);
-document.querySelector('#minus').onclick=()=>changeZoom(1/1.4);
-document.querySelector('#full').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else if(document.documentElement.requestFullscreen)await document.documentElement.requestFullscreen();else message('Полный экран недоступен','Этот браузер не поддерживает полноэкранный режим. Карта продолжает работать.')}catch{status.textContent='Полный экран недоступен'}};
+document.querySelector('#plus').onclick=()=>changeZoom(1.4);document.querySelector('#minus').onclick=()=>changeZoom(1/1.4);
+document.querySelector('#full').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else if(document.documentElement.requestFullscreen)await document.documentElement.requestFullscreen();else status.textContent='Полный экран недоступен'}catch{status.textContent='Полный экран недоступен'}};
 const pointers=new Map();
 function gesture(){const p=[...pointers.values()];if(p.length===1)return{x:p[0].x,y:p[0].y,d:0};if(p.length>=2)return{x:(p[0].x+p[1].x)/2,y:(p[0].y+p[1].y)/2,d:Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)};return null}
 canvas.onpointerdown=e=>{canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});setFollow(false)};
-canvas.onpointermove=e=>{if(!pointers.has(e.pointerId))return;const before=gesture();const anchor={x:center.x+(before.x-w/2)/zoom,z:center.z+(before.y-h/2)/zoom};pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});const after=gesture();if(before.d>0&&after.d>0)zoom=Math.min(20,Math.max(.5,zoom*after.d/before.d));center={x:anchor.x-(after.x-w/2)/zoom,z:anchor.z-(after.y-h/2)/zoom};draw()};
-canvas.onpointerup=canvas.onpointercancel=e=>pointers.delete(e.pointerId);
-canvas.onlostpointercapture=e=>pointers.delete(e.pointerId);
-canvas.onwheel=e=>{e.preventDefault();changeZoom(e.deltaY<0?1.12:1/1.12) };canvas.addEventListener('wheel',e=>e.preventDefault(),{passive:false});
+canvas.onpointermove=e=>{if(!pointers.has(e.pointerId))return;const before=gesture(),anchor={x:center.x+(before.x-w/2)/zoom,z:center.z+(before.y-h/2)/zoom};pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});const after=gesture();if(before.d>0&&after.d>0)zoom=Math.min(20,Math.max(.5,zoom*after.d/before.d));center={x:anchor.x-(after.x-w/2)/zoom,z:anchor.z-(after.y-h/2)/zoom};draw()};
+canvas.onpointerup=canvas.onpointercancel=canvas.onlostpointercapture=e=>pointers.delete(e.pointerId);
+canvas.addEventListener('wheel',e=>{e.preventDefault();changeZoom(e.deltaY<0?1.12:1/1.12)},{passive:false});
+async function command(path,args){
+ if(!frame?.active)throw Error('Сначала зайди в мир');
+ const worldId=frame.worldId,controller=new AbortController(),timer=setTimeout(()=>controller.abort(),4000);
+ try{const response=await fetch(path+'?'+new URLSearchParams({worldId,...args}),{method:'POST',headers:{'X-MineMap-Token':token},signal:controller.signal});
+  if(!response.ok)throw Error(response.status===409?'Мир изменился. Повтори действие.':'Не удалось сохранить. Проверь подключение.');
+  return frame?.worldId===worldId;
+ }finally{clearTimeout(timer)}
+}
+async function sendHeight(value){
+ pendingHeight=value;if(heightBusy)return;heightBusy=true;editingHeight=true;
+ try{while(pendingHeight!==null){const next=pendingHeight;pendingHeight=null;if(await command('/view',{y:next}))revision=-1;}}
+ catch(e){status.textContent=e.message}finally{heightBusy=false;editingHeight=false}
+}
+range.oninput=()=>{editingHeight=true;layer.textContent='Срез Y '+range.value+' · вручную';autoHeight.classList.remove('on');clearTimeout(heightTimer);heightTimer=setTimeout(()=>sendHeight(range.value),180)};
+range.onchange=()=>{clearTimeout(heightTimer);sendHeight(range.value)};
+autoHeight.onclick=()=>{clearTimeout(heightTimer);sendHeight('auto')};
+for(const color of ['#ff6b6b','#ffce54','#76e89a','#64b5ff','#be8cff','#ffffff']){
+ const button=document.createElement('button');button.type='button';button.style.background=color;button.setAttribute('aria-label','Цвет '+color);button.dataset.color=color;button.classList.toggle('selected',color===pointColor);
+ button.onclick=()=>{pointColor=color;document.querySelectorAll('#palette button').forEach(b=>b.classList.toggle('selected',b.dataset.color===color))};document.querySelector('#palette').append(button);
+}
+function pointList(){
+ const list=document.querySelector('#pointList');list.replaceChildren();
+ for(const point of markers){const row=document.createElement('div');row.className='pointitem';const dot=document.createElement('i');dot.style.background=point.color;
+  const name=document.createElement('span');name.textContent=point.name;const detail=document.createElement('small');detail.textContent=point.x+' / '+point.y+' / '+point.z;name.append(detail);
+  const remove=document.createElement('button');remove.textContent='×';remove.setAttribute('aria-label','Удалить '+point.name);remove.onclick=async()=>{try{await command('/markers',{action:'delete',id:point.id})}catch(e){document.querySelector('#pointError').textContent=e.message}};
+  row.append(dot,name,remove);list.append(row);
+ }
+}
+document.querySelector('#addPoint').onclick=()=>{
+ if(!frame?.active)return;document.querySelector('#markerPanel').hidden=false;document.querySelector('#pointError').textContent='';
+ document.querySelector('#pointX').value=Math.floor(center.x);document.querySelector('#pointZ').value=Math.floor(center.z);document.querySelector('#pointY').value=frame.slice?frame.mapY:frame.playerY;
+ document.querySelector('#pointY').min=frame.minY;document.querySelector('#pointY').max=frame.maxY;pointList();
+};
+document.querySelector('#closePoints').onclick=()=>document.querySelector('#markerPanel').hidden=true;
+document.querySelector('#pointForm').onsubmit=async e=>{
+ e.preventDefault();const error=document.querySelector('#pointError');error.textContent='';
+ try{const ok=await command('/markers',{name:document.querySelector('#pointName').value,color:pointColor,x:document.querySelector('#pointX').value,y:document.querySelector('#pointY').value,z:document.querySelector('#pointZ').value});if(ok)document.querySelector('#markerPanel').hidden=true}
+ catch(e){error.textContent=e.message}
+};
+function clearMap(){bitmap=null;chunkImages.clear();player=null;markers=[];imageGeneration++;document.querySelector('#heightPanel').hidden=true;document.querySelector('#markerPanel').hidden=true;document.querySelector('#saved').textContent=''}
+async function decode(image){const img=new Image();img.src='data:image/png;base64,'+image;await img.decode();return img}
 async function poll(){
  if(!token){message('Открой QR в Minecraft','Нажми M в игре и отсканируй код камерой телефона.');status.textContent='Нет ключа подключения';return}
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),4000);
  try{
   const response=await fetch('/state?revision='+revision,{headers:{'X-MineMap-Token':token},cache:'no-store',signal:controller.signal});
-  if(response.status===401){connected=false;frame=null;bitmap=null;revision=-1;imageGeneration++;draw();coords.textContent='—';message('Нужно подключиться заново','Отсканируй новый QR-код в меню MineMap.');status.textContent='Ключ сброшен';return}
+  if(response.status===401){connected=false;frame=null;revision=-1;clearMap();draw();coords.textContent='—';message('Нужно подключиться заново','Отсканируй новый QR-код в меню MineMap.');status.textContent='Ключ сброшен';return}
   if(!response.ok)throw Error('HTTP '+response.status);
   const next=await response.json();connected=true;status.textContent=next.active?'● На связи':'● Minecraft открыт';
-  if(!next.active){frame=next;bitmap=null;revision=-1;imageGeneration++;lastWorld=null;message('Зайди в мир','Карта появится, когда ты откроешь мир Minecraft.');coords.textContent='—';draw()}
-  else {
-   const world=next.worldId+':'+next.dimension;
-   if(world!==lastWorld){lastWorld=world;frame=null;bitmap=null;revision=-1;setFollow(true);pointers.clear();draw()}
-   if(next.image!==undefined){
-    const generation=++imageGeneration;const img=new Image();img.src='data:image/png;base64,'+next.image;await img.decode();
-    if(generation===imageGeneration){bitmap=img;frame=next;revision=next.revision}
-   }else frame=next;
-   if(following)center={x:next.x,z:next.z};coords.textContent=Math.floor(next.x)+' / '+Math.floor(next.z);notice.hidden=true;draw();
+  if(!next.active){frame=next;clearMap();revision=-1;lastWorld=lastView=null;message('Зайди в мир','Карта появится, когда ты откроешь мир Minecraft.');coords.textContent='—';draw()}
+  else{
+   const world=next.worldId+':'+next.dimension,view=world+':'+(next.viewId||'surface');
+   if(world!==lastWorld){lastWorld=world;clearMap();setFollow(true);pointers.clear();pendingHeight=null;clearTimeout(heightTimer);editingHeight=false;}
+   if(view!==lastView){lastView=view;bitmap=null;chunkImages.clear();revision=-1;imageGeneration++;}
+   const generation=imageGeneration;
+   if(next.tiles){const decoded=await Promise.all(next.tiles.map(async tile=>({...tile,image:await decode(tile.image)})));if(generation===imageGeneration)for(const tile of decoded)chunkImages.set(tile.x+','+tile.z,tile);}
+   else if(next.image!==undefined)bitmap=await decode(next.image);
+   frame=next;revision=next.revision;markers=next.markers||[];
+   if(!player||Math.hypot(next.x-player.x,next.z-player.z)>64)player={x:next.x,z:next.z,yaw:next.yaw};
+   if(following)center={x:player.x,z:player.z};
+   coords.textContent='X '+Math.floor(next.x)+' · Y '+(next.playerY??64)+' · Z '+Math.floor(next.z);
+   document.querySelector('#saved').textContent=next.savedChunks===undefined?'':next.savedChunks+' чанков · радиус '+next.radius;
+   document.querySelector('#heightPanel').hidden=false;range.min=next.minY??-64;range.max=next.maxY??319;
+   if(!editingHeight){range.value=next.mapY??64;autoHeight.classList.toggle('on',!next.manualHeight);layer.textContent=(next.slice?'Срез Y '+next.mapY:'Поверхность')+(next.manualHeight?' · вручную':' · Авто')}
+   if(!document.querySelector('#markerPanel').hidden)pointList();notice.hidden=true;draw();
   }
  }catch{connected=false;status.textContent='Переподключение…';message('Связь потеряна','Проверь Wi-Fi / хотспот и оставь Minecraft открытым. Подключение восстановится автоматически.')}
  finally{clearTimeout(timeout)}
- setTimeout(poll,connected?250:1200);
+ setTimeout(poll,connected?100:1000);
 }
-addEventListener('resize',resize);resize();poll();
+addEventListener('resize',resize);resize();requestAnimationFrame(animate);poll();
 </script>
 </body></html>

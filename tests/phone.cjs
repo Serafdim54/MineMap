@@ -24,11 +24,20 @@ async function checkBuiltJar(browser) {
   const response = await page.goto(url);
   assert.equal(response.status(),200);
   assert(response.headers()['content-security-policy'].includes("connect-src 'self'"));
-  await page.waitForFunction(() => document.querySelector('#coords').textContent==='15 / -24' && bitmap!==null);
+  await page.waitForFunction(() => document.querySelector('#coords').textContent==='X 15 · Y 64 · Z -24' && chunkImages.size===2);
+  await command('update');
+  await page.waitForFunction(()=>frame?.x===16.5&&chunkImages.get('1,-2')?.revision===3);
+  assert.equal(await page.evaluate(()=>chunkImages.size),2,'unchanged explored chunk was lost');
+  const heightResponse=page.waitForResponse(r=>new URL(r.url()).pathname==='/view');
+  await page.locator('#heightRange').fill('20');await page.locator('#heightRange').dispatchEvent('change');await heightResponse;await command('height20');
+  const autoResponse=page.waitForResponse(r=>new URL(r.url()).pathname==='/view');
+  await page.locator('#autoHeight').click();await autoResponse;await command('auto');
+  await page.locator('#addPoint').click();await page.locator('#pointName').fill('Дом');await page.locator('#pointForm button[type=submit]').click();
+  await page.waitForFunction(()=>markers.length===1&&markers[0].name==='Дом');
   await command('inactive');
   await page.waitForFunction(() => document.querySelector('#notice strong').textContent==='Зайди в мир');
   await command('active');
-  await page.waitForFunction(() => document.querySelector('#coords').textContent==='31 / 42' && bitmap!==null);
+  await page.waitForFunction(() => document.querySelector('#coords').textContent==='X 31 · Y 64 · Z 42' && chunkImages.size===1);
   await command('reset');
   await page.waitForFunction(() => document.querySelector('#status').textContent==='Ключ сброшен' && bitmap===null);
   assert.deepEqual(errors,[]);
@@ -46,9 +55,18 @@ async function checkBuiltJar(browser) {
   page.on('pageerror', e => errors.push(e.message));
   // Older mobile browsers support AbortController but not AbortSignal.timeout.
   await page.addInitScript(() => { AbortSignal.timeout = undefined; });
-  let calls = 0, mode = 'active', worldId = 1, revision = 1;
+  let calls = 0, mode = 'active', worldId = 1, revision = 1, manualHeight=false, mapY=64, markerList=[];
   await page.route('http://minemap.test/**', async route => {
    const url = new URL(route.request().url());
+   if (url.pathname==='/view') {
+    assert.equal(route.request().method(),'POST');manualHeight=url.searchParams.get('y')!=='auto';mapY=manualHeight?Number(url.searchParams.get('y')):64;revision++;
+    return route.fulfill({contentType:'application/json',body:'{}'});
+   }
+   if (url.pathname==='/markers') {
+    if(url.searchParams.get('action')==='delete')markerList=[];
+    else markerList=[{id:'p',name:url.searchParams.get('name'),color:url.searchParams.get('color'),x:Number(url.searchParams.get('x')),y:Number(url.searchParams.get('y')),z:Number(url.searchParams.get('z'))}];
+    return route.fulfill({contentType:'application/json',body:'{}'});
+   }
    if (url.pathname !== '/state') {
     return route.fulfill({contentType:'text/html',body:fs.readFileSync('src/main/resources/web/index.html','utf8')});
    }
@@ -57,7 +75,7 @@ async function checkBuiltJar(browser) {
    calls++;
    if (mode === 'offline') return route.abort();
    if (mode === 'unauthorized') return route.fulfill({status:401,body:'Pair again'});
-   const next = {active:mode!=='inactive',worldId,dimension:'overworld',x:-12.5,z:24,yaw:90,originX:-104,originZ:-104,size:208,revision};
+   const next = {active:mode!=='inactive',worldId,dimension:'overworld',x:-12.5,z:24,yaw:90,originX:-104,originZ:-104,size:208,revision,playerY:64,mapY,minY:-64,maxY:319,slice:manualHeight,manualHeight,viewId:manualHeight?'y'+mapY:'surface',markers:markerList};
    if (Number(url.searchParams.get('revision')) !== revision) next.image = mode==='broken' ? 'invalid' : png;
    await route.fulfill({contentType:'application/json',body:JSON.stringify(next)});
   });
@@ -67,8 +85,18 @@ async function checkBuiltJar(browser) {
    assert.equal(await page.locator('#follow').getAttribute('class'), '');
   };
   await page.goto('http://minemap.test/#testkey');
-  await page.waitForFunction(() => document.querySelector('#coords').textContent==='-13 / 24');
+  await page.waitForFunction(() => document.querySelector('#coords').textContent==='X -13 · Y 64 · Z 24');
   assert(await page.evaluate(() => bitmap!==null));
+  assert.equal(await page.locator('.axes').textContent(), '+X →+Z ↓');
+  assert(!await page.locator('body').textContent().then(t=>t.includes('ТВОЙ МИР')));
+  await page.locator('#heightRange').fill('20');await page.locator('#heightRange').dispatchEvent('change');
+  await page.waitForFunction(()=>frame?.manualHeight&&frame.mapY===20);
+  await page.locator('#autoHeight').click();await page.waitForFunction(()=>frame&&!frame.manualHeight);
+  await page.locator('#addPoint').click();await page.locator('#pointName').fill('Пещера');
+  await page.locator('#palette button').nth(3).click();await page.locator('#pointForm button[type=submit]').click();
+  await page.waitForFunction(()=>markers.length===1&&markers[0].name==='Пещера'&&markers[0].color==='#64b5ff');
+  await page.locator('#addPoint').click();await page.locator('#pointList button').click();
+  await page.waitForFunction(()=>markers.length===0);await page.locator('#closePoints').click();
   const scale = await page.locator('#scale').textContent();
   await page.locator('#plus').click();
   assert.notEqual(await page.locator('#scale').textContent(), scale);
