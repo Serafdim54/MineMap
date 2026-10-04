@@ -13,9 +13,12 @@ import java.util.concurrent.*;
 public final class PhoneServer implements AutoCloseable {
     private final HttpServer server;
     private final ExecutorService workers;
-    private volatile String token = newToken();
+    private static final class Session {
+        final String token = newToken();
+        volatile long lastSeen;
+    }
+    private volatile Session session = new Session();
     private volatile MapFrame frame = MapFrame.empty(0);
-    private volatile long lastSeen;
     private final byte[] html;
 
     public PhoneServer(int port) throws IOException {
@@ -35,9 +38,12 @@ public final class PhoneServer implements AutoCloseable {
     }
     public void publish(MapFrame frame) { this.frame = frame; }
     public int port() { return server.getAddress().getPort(); }
-    public boolean connected() { return System.currentTimeMillis() - lastSeen < 3000; }
-    public void reset() { token = newToken(); lastSeen = 0; }
-    public String url(String address) { return "http://" + address + ":" + port() + "/#" + token; }
+    public boolean connected() {
+        long seen = session.lastSeen;
+        return seen != 0 && System.nanoTime() - seen < TimeUnit.SECONDS.toNanos(3);
+    }
+    public void reset() { session = new Session(); }
+    public String url(String address) { return "http://" + address + ":" + port() + "/#" + session.token; }
     public static List<String> addresses() {
         var addresses = new ArrayList<String>();
         try {
@@ -61,8 +67,10 @@ public final class PhoneServer implements AutoCloseable {
             switch (exchange.getRequestURI().getPath()) {
                 case "/" -> respond(exchange, 200, "text/html; charset=utf-8", html);
                 case "/state" -> {
+                    // A request from the old session cannot mark the new session connected.
+                    Session current = session;
                     String supplied = exchange.getRequestHeaders().getFirst("X-MineMap-Token");
-                    if (supplied == null || !java.security.MessageDigest.isEqual(token.getBytes(StandardCharsets.UTF_8), supplied.getBytes(StandardCharsets.UTF_8))) {
+                    if (supplied == null || !java.security.MessageDigest.isEqual(current.token.getBytes(StandardCharsets.UTF_8), supplied.getBytes(StandardCharsets.UTF_8))) {
                         respond(exchange, 401, "text/plain", "Pair again".getBytes(StandardCharsets.UTF_8)); return;
                     }
                     long revision = -1;
@@ -70,7 +78,7 @@ public final class PhoneServer implements AutoCloseable {
                     if (query != null && query.startsWith("revision=")) {
                         try { revision = Long.parseLong(query.substring(9)); } catch (NumberFormatException ignored) { }
                     }
-                    lastSeen = System.currentTimeMillis();
+                    current.lastSeen = System.nanoTime();
                     respond(exchange, 200, "application/json", frame.json(revision).getBytes(StandardCharsets.UTF_8));
                 }
                 default -> respond(exchange, 404, "text/plain", new byte[0]);

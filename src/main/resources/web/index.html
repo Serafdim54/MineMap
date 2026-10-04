@@ -18,7 +18,7 @@
 const canvas=document.querySelector('#map'),ctx=canvas.getContext('2d');
 const status=document.querySelector('#status'),coords=document.querySelector('#coords'),notice=document.querySelector('#notice');
 const token=location.hash.slice(1); // Session key stays out of HTTP URLs and referrers.
-let frame=null,bitmap=null,revision=-1,center={x:0,z:0},zoom=3,following=true,w=0,h=0,connected=false,lastDimension=null;
+let frame=null,bitmap=null,revision=-1,center={x:0,z:0},zoom=3,following=true,w=0,h=0,connected=false,lastWorld=null;
 let imageGeneration=0;
 function message(title,body){notice.hidden=false;notice.querySelector('strong').textContent=title;notice.querySelector('span').textContent=body}
 function resize(){w=innerWidth;h=innerHeight;const dpr=devicePixelRatio||1;canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);draw()}
@@ -44,17 +44,20 @@ function gesture(){const p=[...pointers.values()];if(p.length===1)return{x:p[0].
 canvas.onpointerdown=e=>{canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});setFollow(false)};
 canvas.onpointermove=e=>{if(!pointers.has(e.pointerId))return;const before=gesture();const anchor={x:center.x+(before.x-w/2)/zoom,z:center.z+(before.y-h/2)/zoom};pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});const after=gesture();if(before.d>0&&after.d>0)zoom=Math.min(20,Math.max(.5,zoom*after.d/before.d));center={x:anchor.x-(after.x-w/2)/zoom,z:anchor.z-(after.y-h/2)/zoom};draw()};
 canvas.onpointerup=canvas.onpointercancel=e=>pointers.delete(e.pointerId);
+canvas.onlostpointercapture=e=>pointers.delete(e.pointerId);
 canvas.onwheel=e=>{e.preventDefault();changeZoom(e.deltaY<0?1.12:1/1.12) };canvas.addEventListener('wheel',e=>e.preventDefault(),{passive:false});
 async function poll(){
  if(!token){message('Открой QR в Minecraft','Нажми F8 в игре и отсканируй код камерой телефона.');status.textContent='Нет ключа подключения';return}
+ const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),4000);
  try{
-  const response=await fetch('/state?revision='+revision,{headers:{'X-MineMap-Token':token},cache:'no-store',signal:AbortSignal.timeout(4000)});
-  if(response.status===401){message('Нужно подключиться заново','Отсканируй новый QR-код в меню MineMap.');status.textContent='Ключ сброшен';return}
+  const response=await fetch('/state?revision='+revision,{headers:{'X-MineMap-Token':token},cache:'no-store',signal:controller.signal});
+  if(response.status===401){connected=false;frame=null;bitmap=null;revision=-1;imageGeneration++;draw();coords.textContent='—';message('Нужно подключиться заново','Отсканируй новый QR-код в меню MineMap.');status.textContent='Ключ сброшен';return}
   if(!response.ok)throw Error('HTTP '+response.status);
   const next=await response.json();connected=true;status.textContent=next.active?'● На связи':'● Minecraft открыт';
-  if(!next.active){frame=next;bitmap=null;revision=next.revision;imageGeneration++;lastDimension=null;message('Зайди в мир','Карта появится, когда ты откроешь мир Minecraft.');coords.textContent='—';draw()}
+  if(!next.active){frame=next;bitmap=null;revision=-1;imageGeneration++;lastWorld=null;message('Зайди в мир','Карта появится, когда ты откроешь мир Minecraft.');coords.textContent='—';draw()}
   else {
-   if(next.dimension!==lastDimension){lastDimension=next.dimension;setFollow(true)}
+   const world=next.worldId+':'+next.dimension;
+   if(world!==lastWorld){lastWorld=world;frame=null;bitmap=null;revision=-1;setFollow(true);pointers.clear();draw()}
    if(next.image!==undefined){
     const generation=++imageGeneration;const img=new Image();img.src='data:image/png;base64,'+next.image;await img.decode();
     if(generation===imageGeneration){bitmap=img;frame=next;revision=next.revision}
@@ -62,6 +65,7 @@ async function poll(){
    if(following)center={x:next.x,z:next.z};coords.textContent=Math.floor(next.x)+' / '+Math.floor(next.z);notice.hidden=true;draw();
   }
  }catch{connected=false;status.textContent='Переподключение…';message('Связь потеряна','Проверь Wi-Fi / хотспот и оставь Minecraft открытым. Подключение восстановится автоматически.')}
+ finally{clearTimeout(timeout)}
  setTimeout(poll,connected?250:1200);
 }
 addEventListener('resize',resize);resize();poll();

@@ -18,7 +18,7 @@ final class TerrainSampler {
     private final List<int[]> offsets = new ArrayList<>();
     private ClientLevel level;
     private int cursor, ticks, originX, originZ;
-    private long revision;
+    private long revision, worldId;
     private String image = "";
     TerrainSampler() {
         for (int z = -RADIUS; z <= RADIUS; z++) for (int x = -RADIUS; x <= RADIUS; x++) offsets.add(new int[]{x, z});
@@ -26,12 +26,13 @@ final class TerrainSampler {
     }
     MapFrame tick(Minecraft client) {
         if (client.level != level) {
-            level = client.level; tiles.clear(); cursor = ticks = 0; image = ""; revision++;
+            level = client.level; tiles.clear(); cursor = ticks = 0; image = ""; revision++; worldId++;
         }
         if (level == null || client.player == null) return MapFrame.empty(revision);
         int centerX = Math.floorDiv(client.player.getBlockX(), 16), centerZ = Math.floorDiv(client.player.getBlockZ(), 16);
         for (int n = 0; n < 2; n++) {
-            int[] offset = offsets.get(cursor++ % offsets.size());
+            int[] offset = offsets.get(cursor);
+            cursor = (cursor + 1) % offsets.size();
             int cx = centerX + offset[0], cz = centerZ + offset[1];
             if (!level.getChunkSource().hasChunk(cx, cz)) { tiles.remove(key(cx, cz)); continue; }
             var colors = new int[256];
@@ -51,7 +52,9 @@ final class TerrainSampler {
             }
             tiles.put(key(cx, cz), colors);
         }
-        tiles.keySet().removeIf(k -> Math.abs((int)(k >> 32) - centerX) > RADIUS + 1 || Math.abs((int)(long)k - centerZ) > RADIUS + 1);
+        tiles.keySet().removeIf(k -> Math.abs((int)(k >> 32) - centerX) > RADIUS + 1
+            || Math.abs((int)(long)k - centerZ) > RADIUS + 1
+            || !level.getChunkSource().hasChunk((int)(k >> 32), (int)(long)k));
         if (++ticks % 20 == 0 || image.isEmpty()) {
             var bitmap = new BufferedImage(SIZE, SIZE, BufferedImage.TYPE_INT_ARGB);
             originX = (centerX - RADIUS) * 16; originZ = (centerZ - RADIUS) * 16;
@@ -64,7 +67,7 @@ final class TerrainSampler {
                 image = Base64.getEncoder().encodeToString(bytes.toByteArray()); revision++;
             } catch (IOException e) { throw new IllegalStateException("Unable to encode map", e); }
         }
-        return new MapFrame(true, level.dimension().toString(), client.player.getX(), client.player.getZ(),
+        return new MapFrame(true, worldId, level.dimension().toString(), client.player.getX(), client.player.getZ(),
             client.player.getYRot(), originX, originZ, SIZE, revision, image);
     }
     private static long key(int x, int z) { return ((long)x << 32) | (z & 0xffffffffL); }

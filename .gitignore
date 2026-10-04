@@ -3,4 +3,7 @@ build/
 run/
 .idea/
 *.iml
+.tmp/
+.browsers/
+node_modules/
 node_modules/
