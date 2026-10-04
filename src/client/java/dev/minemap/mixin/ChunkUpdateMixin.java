@@ -14,7 +14,7 @@ abstract class ChunkUpdateMixin {
     private void minemap$changed(CallbackInfoReturnable<BlockState> result) {
         if (result.getReturnValue() != null) {
             var pos = ((LevelChunk)(Object)this).getPos();
-            MineMapClient.chunkChanged(pos.x, pos.z);
+            MineMapClient.chunkChanged(pos.x(), pos.z());
         }
     }
 }
