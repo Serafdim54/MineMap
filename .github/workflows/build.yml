@@ -13,18 +13,27 @@ jobs:
           java-version: '25'
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '9.6.0'
-      - run: gradle build --no-daemon
+          cache-read-only: false
+      - run: ./gradlew build --no-daemon
+      - run: python3 tests/packaging.py
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - run: npm install --no-save --package-lock=false playwright@1.55.1
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium webkit
       - run: node tests/phone.cjs
+      - name: Minecraft Fabric bootstrap smoke
+        run: |
+          set -o pipefail
+          timeout 120s xvfb-run -a ./gradlew runClient -PminemapSmoke --no-daemon | tee build/client-smoke.log
+          grep -q MINEMAP_BOOTSTRAP_OK build/client-smoke.log
+      - run: node tests/phone.cjs
+        env:
+          MINEMAP_BROWSER: webkit
       - uses: actions/upload-artifact@v4
         with:
           name: phone-preview
-          path: build/phone-preview.png
+          path: build/phone-preview-*.png
       - uses: actions/upload-artifact@v4
         with:
           name: MineMap-26.3
@@ -33,4 +42,7 @@ jobs:
         if: always()
         with:
           name: test-results
-          path: build/reports/tests/
+          path: |
+            build/reports/tests/
+            build/client-smoke.log
+            run/logs/latest.log

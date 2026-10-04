@@ -1,0 +1,6 @@
+{
+  "required": true,
+  "package": "dev.minemap.mixin",
+  "client": ["ChunkUpdateMixin"],
+  "injectors": { "defaultRequire": 1 }
+}

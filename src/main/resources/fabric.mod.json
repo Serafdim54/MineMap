@@ -2,6 +2,7 @@
  "schemaVersion": 1, "id": "minemap", "version": "${version}",
  "name": "MineMap", "description": "Minecraft map on your phone over local Wi-Fi.",
  "authors": ["Serafdim54"], "environment": "client",
+ "mixins": ["minemap.client.mixins.json"],
  "entrypoints": { "client": ["dev.minemap.MineMapClient"] },
  "depends": { "fabricloader": ">=0.19.5", "minecraft": "26.3", "java": ">=25", "fabric-api": ">=0.161.0" }
 }
