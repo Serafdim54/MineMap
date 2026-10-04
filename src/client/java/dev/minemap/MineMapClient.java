@@ -15,7 +15,7 @@ public final class MineMapClient implements ClientModInitializer {
     private String error;
     @Override public void onInitializeClient() {
         var category = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("minemap", "controls"));
-        var open = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.minemap.connect", InputConstants.Type.KEYBOARD, InputConstants.KEY_F8, category));
+        var open = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.minemap.connect", InputConstants.Type.KEYBOARD, InputConstants.KEY_M, category));
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (open.consumeClick()) {
                 if (server == null) {

@@ -47,7 +47,7 @@ canvas.onpointerup=canvas.onpointercancel=e=>pointers.delete(e.pointerId);
 canvas.onlostpointercapture=e=>pointers.delete(e.pointerId);
 canvas.onwheel=e=>{e.preventDefault();changeZoom(e.deltaY<0?1.12:1/1.12) };canvas.addEventListener('wheel',e=>e.preventDefault(),{passive:false});
 async function poll(){
- if(!token){message('Открой QR в Minecraft','Нажми F8 в игре и отсканируй код камерой телефона.');status.textContent='Нет ключа подключения';return}
+ if(!token){message('Открой QR в Minecraft','Нажми M в игре и отсканируй код камерой телефона.');status.textContent='Нет ключа подключения';return}
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),4000);
  try{
   const response=await fetch('/state?revision='+revision,{headers:{'X-MineMap-Token':token},cache:'no-store',signal:controller.signal});
