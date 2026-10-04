@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#101713"><title>MineMap</title>
+<style>
+:root{color-scheme:dark;font:14px system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:#101713;color:#eef5ef;overflow:hidden}canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;background:#141d18}.top{position:fixed;top:max(16px,env(safe-area-inset-top));left:16px;right:16px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none}.brand,.info,.buttons{background:#101713df;border:1px solid #ffffff19;backdrop-filter:blur(14px);border-radius:18px;box-shadow:0 8px 30px #0003}.brand{padding:12px 16px}.brand b{font-size:21px;letter-spacing:-.8px}.brand small{display:block;color:#9baa9e;font-size:11px;margin-top:4px}.info{padding:12px;text-align:right;font-variant-numeric:tabular-nums}#status{font-size:11px;color:#ade0bc}#coords{margin-top:5px}.bottom{position:fixed;bottom:max(18px,env(safe-area-inset-bottom));left:16px;right:16px;display:flex;align-items:end;justify-content:space-between;gap:12px}.buttons{padding:5px;display:flex;gap:3px}button{border:0;border-radius:13px;background:transparent;color:#e8f1eb;padding:12px 14px;font:inherit;cursor:pointer;touch-action:manipulation}button:active{background:#ffffff18}button.on{background:#294e36;color:#b7efc7}#notice{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);max-width:340px;width:calc(100% - 40px);text-align:center;background:#101713e8;border:1px solid #ffffff20;border-radius:22px;padding:24px;pointer-events:none}#notice strong{display:block;font-size:21px;margin-bottom:9px}#notice span{color:#aebcb1;line-height:1.6}.north{position:fixed;left:20px;top:104px;color:#b1c0b5;font-size:12px}#scale{font-size:11px;color:#b1c0b5;padding-bottom:10px}#scale:before{content:'';display:block;width:64px;border:1px solid #b1c0b5;border-top:0;height:5px;margin-bottom:5px}button:focus-visible{outline:2px solid #ade0bc}
+</style>
+</head>
+<body>
+<canvas id="map" aria-label="Карта Minecraft"></canvas>
+<div class="top"><div class="brand"><b>MineMap<span style="color:#9ce8b4">.</span></b><small>ТВОЙ МИР · ВТОРОЙ ЭКРАН</small></div><div class="info"><div id="status">Подключение…</div><div id="coords">—</div></div></div>
+<div class="north">↑ N</div>
+<div id="notice"><strong>Подключение к миру</strong><span>Оставь Minecraft открытым на ноутбуке.</span></div>
+<div class="bottom"><div><div id="scale">— блоков</div><div class="buttons"><button id="follow" class="on">◎ Игрок</button><button id="full" aria-label="Полный экран">⛶</button></div></div><div class="buttons"><button id="minus" aria-label="Уменьшить">−</button><button id="plus" aria-label="Увеличить">+</button></div></div>
+<script>
+'use strict';
+const canvas=document.querySelector('#map'),ctx=canvas.getContext('2d');
+const status=document.querySelector('#status'),coords=document.querySelector('#coords'),notice=document.querySelector('#notice');
+const token=location.hash.slice(1); // Session key stays out of HTTP URLs and referrers.
+let frame=null,bitmap=null,revision=-1,center={x:0,z:0},zoom=3,following=true,w=0,h=0,connected=false,lastDimension=null;
+let imageGeneration=0;
+function message(title,body){notice.hidden=false;notice.querySelector('strong').textContent=title;notice.querySelector('span').textContent=body}
+function resize(){w=innerWidth;h=innerHeight;const dpr=devicePixelRatio||1;canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);draw()}
+function draw(){
+ ctx.clearRect(0,0,w,h);ctx.fillStyle='#141d18';ctx.fillRect(0,0,w,h);
+ ctx.strokeStyle='#ffffff06';ctx.lineWidth=1;const grid=16*zoom;
+ for(let x=((w/2-center.x*zoom)%grid+grid)%grid;x<w;x+=grid){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}
+ for(let y=((h/2-center.z*zoom)%grid+grid)%grid;y<h;y+=grid){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}
+ if(frame?.active&&bitmap){ctx.imageSmoothingEnabled=false;ctx.drawImage(bitmap,w/2+(frame.originX-center.x)*zoom,h/2+(frame.originZ-center.z)*zoom,frame.size*zoom,frame.size*zoom)}
+ if(frame?.active){const px=w/2+(frame.x-center.x)*zoom,py=h/2+(frame.z-center.z)*zoom;
+  ctx.save();ctx.translate(px,py);ctx.fillStyle='#bbffd32a';ctx.beginPath();ctx.arc(0,0,22,0,Math.PI*2);ctx.fill();ctx.rotate((frame.yaw+180)*Math.PI/180);ctx.fillStyle='#c8ffda';ctx.strokeStyle='#163b23';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,-14);ctx.lineTo(9,10);ctx.lineTo(0,5);ctx.lineTo(-9,10);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
+ }
+ document.querySelector('#scale').textContent=Math.round(64/zoom)+' блоков';
+}
+function setFollow(value){following=value;document.querySelector('#follow').classList.toggle('on',value);if(value&&frame){center={x:frame.x,z:frame.z};draw()}}
+function changeZoom(factor){zoom=Math.min(20,Math.max(.5,zoom*factor));draw()}
+document.querySelector('#follow').onclick=()=>setFollow(true);
+document.querySelector('#plus').onclick=()=>changeZoom(1.4);
+document.querySelector('#minus').onclick=()=>changeZoom(1/1.4);
+document.querySelector('#full').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else if(document.documentElement.requestFullscreen)await document.documentElement.requestFullscreen();else message('Полный экран недоступен','Этот браузер не поддерживает полноэкранный режим. Карта продолжает работать.')}catch{status.textContent='Полный экран недоступен'}};
+const pointers=new Map();
+function gesture(){const p=[...pointers.values()];if(p.length===1)return{x:p[0].x,y:p[0].y,d:0};if(p.length>=2)return{x:(p[0].x+p[1].x)/2,y:(p[0].y+p[1].y)/2,d:Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)};return null}
+canvas.onpointerdown=e=>{canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});setFollow(false)};
+canvas.onpointermove=e=>{if(!pointers.has(e.pointerId))return;const before=gesture();const anchor={x:center.x+(before.x-w/2)/zoom,z:center.z+(before.y-h/2)/zoom};pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});const after=gesture();if(before.d>0&&after.d>0)zoom=Math.min(20,Math.max(.5,zoom*after.d/before.d));center={x:anchor.x-(after.x-w/2)/zoom,z:anchor.z-(after.y-h/2)/zoom};draw()};
+canvas.onpointerup=canvas.onpointercancel=e=>pointers.delete(e.pointerId);
+canvas.onwheel=e=>{e.preventDefault();changeZoom(e.deltaY<0?1.12:1/1.12) };canvas.addEventListener('wheel',e=>e.preventDefault(),{passive:false});
+async function poll(){
+ if(!token){message('Открой QR в Minecraft','Нажми F8 в игре и отсканируй код камерой телефона.');status.textContent='Нет ключа подключения';return}
+ try{
+  const response=await fetch('/state?revision='+revision,{headers:{'X-MineMap-Token':token},cache:'no-store',signal:AbortSignal.timeout(4000)});
+  if(response.status===401){message('Нужно подключиться заново','Отсканируй новый QR-код в меню MineMap.');status.textContent='Ключ сброшен';return}
+  if(!response.ok)throw Error('HTTP '+response.status);
+  const next=await response.json();connected=true;status.textContent=next.active?'● На связи':'● Minecraft открыт';
+  if(!next.active){frame=next;bitmap=null;revision=next.revision;imageGeneration++;lastDimension=null;message('Зайди в мир','Карта появится, когда ты откроешь мир Minecraft.');coords.textContent='—';draw()}
+  else {
+   if(next.dimension!==lastDimension){lastDimension=next.dimension;setFollow(true)}
+   if(next.image!==undefined){
+    const generation=++imageGeneration;const img=new Image();img.src='data:image/png;base64,'+next.image;await img.decode();
+    if(generation===imageGeneration){bitmap=img;frame=next;revision=next.revision}
+   }else frame=next;
+   if(following)center={x:next.x,z:next.z};coords.textContent=Math.floor(next.x)+' / '+Math.floor(next.z);notice.hidden=true;draw();
+  }
+ }catch{connected=false;status.textContent='Переподключение…';message('Связь потеряна','Проверь Wi-Fi / хотспот и оставь Minecraft открытым. Подключение восстановится автоматически.')}
+ setTimeout(poll,connected?250:1200);
+}
+addEventListener('resize',resize);resize();poll();
+</script>
+</body></html>
