@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(LevelChunk.class)
 abstract class ChunkUpdateMixin {
-    @Inject(method = "setBlockState", at = @At("RETURN"), require = 0)
+    @Inject(method = "setBlockState", at = @At("RETURN"), require = 1)
     private void minemap$changed(CallbackInfoReturnable<BlockState> result) {
         if (result.getReturnValue() != null) {
             var pos = ((LevelChunk)(Object)this).getPos();

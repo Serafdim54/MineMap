@@ -12,6 +12,8 @@ jobs:
           distribution: temurin
           java-version: '25'
       - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
       - run: ./gradlew build --no-daemon
       - run: python3 tests/packaging.py
       - uses: actions/setup-node@v4
@@ -20,10 +22,11 @@ jobs:
       - run: npm install --no-save --package-lock=false playwright@1.55.1
       - run: npx playwright install --with-deps chromium webkit
       - run: node tests/phone.cjs
-      - name: Minecraft client startup smoke
+      - name: Minecraft Fabric bootstrap smoke
         run: |
-          timeout 240s xvfb-run -a ./gradlew runClient -PminemapSmoke --no-daemon | tee build/client-smoke.log
-          grep -q MINEMAP_SMOKE_OK build/client-smoke.log
+          set -o pipefail
+          timeout 120s xvfb-run -a ./gradlew runClient -PminemapSmoke --no-daemon | tee build/client-smoke.log
+          grep -q MINEMAP_BOOTSTRAP_OK build/client-smoke.log
       - run: node tests/phone.cjs
         env:
           MINEMAP_BROWSER: webkit

@@ -20,11 +20,15 @@ public record MapFrame(boolean active, long worldId, String dimension, double x,
             map = revision == knownRevision ? "" : ",\"image\":\"" + pngBase64 + "\"";
         } else {
             long since = knownRevision < viewRevision ? -1 : knownRevision;
-            var changed = tiles.stream().filter(t -> t.revision() > since).limit(129).toList();
-            int count = Math.min(128, changed.size());
-            if (changed.size() > 128) sentRevision = changed.get(count - 1).revision();
+            int low = 0, high = tiles.size();
+            while (low < high) {
+                int middle = (low + high) >>> 1;
+                if (tiles.get(middle).revision() <= since) low = middle + 1; else high = middle;
+            }
+            int end = Math.min(low + 128, tiles.size());
+            if (end < tiles.size()) sentRevision = tiles.get(end - 1).revision();
             var json = new StringBuilder(",\"tiles\":[");
-            for (int i = 0; i < count; i++) { if (i > 0) json.append(','); json.append(changed.get(i).json()); }
+            for (int i = low; i < end; i++) { if (i > low) json.append(','); json.append(tiles.get(i).json()); }
             map = json.append(']').toString();
         }
         return "{\"active\":" + active + ",\"worldId\":" + worldId + ",\"dimension\":\"" + escape(dimension)
